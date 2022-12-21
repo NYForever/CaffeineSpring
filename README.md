@@ -1,8 +1,9 @@
-#caffeine
-    
-###官网：https://github.com/ben-manes/caffeine/blob/master/README.md
 
-###使用
+# caffeine
+    
+### 官网：https://github.com/ben-manes/caffeine/blob/master/README.md
+
+### 使用
 引入jar包
 
     <dependency>
@@ -11,7 +12,7 @@
         <version>2.9.3</version>
     </dependency>
 
-###回收策略
+### 回收策略
  Window TinyLfu：缓存命中率极高
 			缓存的删除策略使用的是惰性删除和定时删除，但是我也可以自己调用cache.cleanUp()方法手动触发一次回收操作
 
@@ -19,10 +20,10 @@
 
  lru：最近最少访问（最长时间没有没访问）
 
-###填充策略
+### 填充策略
  访问缓存中没有数据，需要添加数据到缓存中时的三种策略
 
-####1.手动添加
+#### 1.手动添加
  **get方法执行是原子性的，即多个线程同时请求该值，填充方法只会执行一次，所以get方法要优于getIfPresent**
 
 	 Cache<String, Object> manualCache = Caffeine.newBuilder()
@@ -31,7 +32,7 @@
 	         .build();
 	 graph = manualCache.get(key, k -> createExpensiveGraph(k));
 
-####2.同步自动添加
+#### 2.同步自动添加
  **直接调用get方法，如果没值会调用createExpensiveGraph()方法填充，其本质是调用了CacheLoader的load方法**
 
      LoadingCache<String, Object> loadingCache = Caffeine.newBuilder()
@@ -51,7 +52,7 @@
              }
          });
 
-####3.异步自动添加
+#### 3.异步自动添加
 
 	 AsyncLoadingCache<String, Object> asyncLoadingCache = Caffeine.newBuilder()
 	             .maximumSize(10_000)
@@ -60,8 +61,8 @@
 	             .buildAsync(key -> createExpensiveGraph(key));
 	 CompletableFuture<Object> graph = asyncLoadingCache.get(key);
 
-###驱逐策略
-####1.基于大小
+### 驱逐策略
+#### 1.基于大小
  a)基于缓存大小
 
  b)基于权重
@@ -73,14 +74,14 @@
 	   .weigher((k,v) -> 5)
 	   .build(k -> DataObject.get("Data for " + k));
 
-####2.基于时间
+#### 2.基于时间
  a)expireAfterAccess：基于最后一次写入或者访问开始倒计时，假如一直有请求访问该key，则一直不会过期
 
  b)expireAfterWrite：最后一次写入缓存开始倒计时
 
  c)expireAfter：自定义策略，过期时间由Expiry实现独自计算
 
-####3.基于引用
+#### 3.基于引用
  强引用 > 软引用 > 弱引用 > 虚引用
 
 	 引用类型	被垃圾回收时间	        用途			生存时间
@@ -89,7 +90,7 @@
 	 弱引用		在垃圾回收时		对象缓存			c运行后终止
 	 虚引用		Unknown			Unknown			Unknown
 
-###移除监听
+### 移除监听
  移除：
 
  驱逐（eviction）：由于满足了某种驱逐策略，后台自动进行的删除操作
@@ -104,7 +105,7 @@
 		        System.out.printf("Key %s was removed (%s)%n", key, cause))
 		    .build();
 
-###手动删除缓存
+### 手动删除缓存
 
 	 // individual key
 	 cache.invalidate(key)
@@ -113,7 +114,7 @@
 	 // all keys
 	 cache.invalidateAll()
 
-###统计
+### 统计
 	 Cache<Key, Graph> cache = Caffeine.newBuilder()
 	     .maximumSize(10_000)
 	     .recordStats()
@@ -129,7 +130,7 @@
  averageLoadPenalty()：加载新值所花费的平均时间
 
 
-###刷新（Refresh）
+### 刷新（Refresh）
  这个参数是 LoadingCache 和 AsyncLoadingCache 的才会有的
 
  refreshAfterWrite 多少秒之后刷新数据，是惰性刷新的，即数据其实已经过期了，但是没有访问该条数据的时候，存的还是旧值
@@ -139,11 +140,11 @@
  当时间已经过期，并且触发访问后，会先返回旧值，然后调用reload()方法，更新缓存
 
 
-###策略（Policy）
+### 策略（Policy）
 
-###测试
+### 测试
 
-###FAQ:
+### FAQ:
 	 1.基于权重驱逐策略---DONE
 	 2.Refresh什么作用---DONE
 	 3.回收策略 Window TinyLfu
