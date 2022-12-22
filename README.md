@@ -151,14 +151,98 @@
 	 4.异步填充
 
 
+## CacheManager
+
+### 概念
+
+- 1.JSR是Java Specification Requests的缩写，意思是Java 规范提案；JSR 107是JCache API的首个早期草案
+
+    - 1.CachingProvider定义了创建、配置、获取、管理和控制多个CacheManager。一个应用可以在运行期访问多个CachingProvider。
+
+    - 2.CacheManager定义了创建、配置、获取、管理和控制多个唯一命名的Cache，这些Cache存在于CacheManager的上下文中。一个CacheManager仅被一个CachingProvider所拥有。
+
+    - 3.Cache是一个类似Map的数据结构并临时存储以Key为索引的值。一个Cache仅被一个CacheManager所拥有。
+
+    - 4.Entry是一个存储在Cache中的key-value对。
+
+    - 5.Expiry 每一个存储在Cache中的条目有一个定义的有效期。一旦超过这个时间，条目为过期的状态。一旦过期，条目将不可访问、更新和删除。缓存有效期可以通过ExpiryPolicy设置。
+    - 
+- 2.spring支持JSR107，基本概念
+  - Cache	缓存接口，定义缓存操作。实现有：RedisCache、EhCacheCache、ConcurrentMapCache等
+  - CaheManager	缓存管理器，管理各种缓存（Cache组件）
+  - @Cacheable	主要针对方法配置，能够根据方法的请求参数对其结果进行缓存
+  - @CacheEvict	清空缓存（和==@Cacheable==配合使用才有意义）
+  - @CacheEvict	清空缓存（和==@Cacheable==配合使用才有意义）
+  - @CachePut	保证方法被调用，又希望结果被缓存。（和==@Cacheable==配合使用才有意义）
+  - @Caching	组合注解，可同时使用上面三个注解。用于实现复杂的缓存策略
+  - @CacheConfig	一般用在类上，抽取配置其他注解的共有属性，例如cacheNames
+  - @EnableCaching	开启基于注解的缓存
+
+- 3.@Cacheable/@CachePut/@CacheEvict注解下的常用属性
+  - cacheNames	缓存的名称，在 spring 配置文件中定义，必须指定至少一个	例如： @Cacheable(cacheNames=”mycache”) 或者 @Cacheable(cacheNames={”cache1”,”cache2”}
+  - value	等效于cacheNames	例如： @Cacheable(value=”mycache”) 或者 @Cacheable(value={”cache1”,”cache2”}
+  - key	缓存的 key，可以为空，如果指定要按照 SpEL 表达式编写，如果不指定，则默认使用SimpleKeyGenerator策略生成key	例如： @Cacheable(value=”testcache”,key=”#userName”)
+  - keyGenerator	指定key的生成策略	例如：keyGenerator = “myKeyGenerator”
+  - condition	缓存的条件，可以为空，使用 SpEL 编写，返回 true 或者 false，只有为 true 才进行缓存/清除缓存，在调用方法之前之后都能判断	例如： @Cacheable(value=”testcache”,condition=”#userName.length()>2”)
+  - allEntries (@CacheEvict )	是否清空所有缓存内容，缺省为 false，如果指定为 true，则方法调用后将立即清空所有缓存 （指定CacheName下的缓存）	例如： @CachEvict(value=”testcache”,allEntries=true)
+  - beforeInvocation (@CacheEvict)	是否在方法执行前就清空，缺省为 false，如果指定为 true，则在方法还没有执行的时候就清空缓存，缺省情况下，如果方法执行抛出异常，则不会清空缓存	例如： @CachEvict(value=”testcache”，beforeInvocation=true)
+  - unless (@CachePut) (@Cacheable)	用于否决缓存的，不像condition，该表达式只在方法执行之后判断，此时可以拿到返回值result进行判断。条件为true不会缓存，fasle才缓存	例如： @Cacheable(value=”testcache”,unless=”#result == null”)
+    
+- 4.SpEL表达式详解
+  - methodName	root.object	当前被调用的方法名	#root.methodName
+  - method	root.object	当前被调用的方法	#root.method.name
+  - target	root.object	当前被调用的目标对象	#root.target
+  - targetClass	root.object	当前被调用的目标对象类	#root.targetClass
+  - args	root.object	当前被调用的方法的参数列表	#root.args[0]
+  - caches	root object	当前方法调用使用的缓存列表（如@Cacheable(value={“cache1”, “cache2”})），则有两个cache	#root.caches[0].name
+  - argument name	evaluation context	方法参数的名字. 可以直接==#参数名==，也可以使用 #p0或==#a0== 的形式，0代表参数的索引；	#iban 、 #a0 、 #p0
+  - result	evaluation context	方法执行后的返回值（仅当方法执行之后的判断有效，如‘unless’，’cache put’的表达式 ’cache evict’的表达式beforeInvocation=false）	#result
 
 
+### 使用
+1.引入依赖
+
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-cache</artifactId>
+	</dependency>
 
 
+2.开启cache
+
+    @EnableCaching
 
 
+### 默认实现
+
+- 1.只指定以上配置，springboot启动会自动生成一个cacheManager，配置类为`SimpleCacheConfiguration`，cacheManager类型为`ConcurrentMapCacheManager`
+  - 1.入口：`CacheAutoConfiguration`为Cache配置类，项目启动会加载该类
+  - 2.其中静态内部类`CacheConfigurationImportSelector`，实现了`ImportSelector`，启动会自动注入`SimpleCacheConfiguration`
+- 2.`ConcurrentMapCacheManager`用于管理Cache，调用`getCache()`方法，如果没有配置Cache，则会调用`createConcurrentMapCache`自动生成一个Cache，类型为`ConcurrentMapCache`
 
 
+### 日常用法
 
+- 1.新建配置类`MyFirstCacheManager`
+- 2.通过定义枚举来定义不同的Cache
+- 3.`@Bean`注入CacheManager
+- 4.将Cache交给CacheManager管理
+- 5.使用：
+  - 1.可直接注入`firstCacheManager`，通过`getCache()`方法获取对应的Cache
+  - 2.使用在方法上，通过`@Cacheable`注解的`cacheNames`属性置顶对应的Cache
+  
+
+	//直接使用
+	@Resource
+	private CacheManager firstCacheManager;
+
+    public Object getData(){
+    Cache cache = firstCacheManager.getCache(MyFirstCacheManager.Caches.five_min_cache.name());
+    Cache.ValueWrapper abc = cache.get("abc");
+    return abc;
+    }
+
+	//用在方法上
+	@Cacheable(cacheNames = "five_min_cache",key = "#random")
 
 

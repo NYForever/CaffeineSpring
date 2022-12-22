@@ -3,11 +3,12 @@ package com.ny.caffeinespring.config;
 import com.github.benmanes.caffeine.cache.*;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.checker.units.qual.K;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Resource;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -18,8 +19,13 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class CacheConfig {
 
-    @Resource
-    private LoadingCache<String, Integer> caffeineCache;
+    @Bean
+    public AsyncLoadingCache<String, Long> asynCaffeineCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(10_000)
+                .expireAfterWrite(10, TimeUnit.MINUTES)
+                .buildAsync(key -> createExpensiveGraph());
+    }
 
     @Bean
     public LoadingCache<String, Long> caffeineCache() {
@@ -33,7 +39,6 @@ public class CacheConfig {
                         return 400L;
                     }
                 });
-
 
 //        return Caffeine.newBuilder()
 ////                .expireAfterWrite(2 * 60 * 60, TimeUnit.SECONDS)
@@ -56,6 +61,8 @@ public class CacheConfig {
     }
 
     /**
+     * refreshAfterWrite
+     *
      * 这个参数是 LoadingCache 和 AsyncLoadingCache 的才会有的
      * refreshAfterWrite 多少秒之后刷新数据，是惰性刷新的，即数据其实已经过期了，但是没有访问该条数据的时候，存的还是旧值
      * 当访问的key在缓存中不存在，会触发load方法，往缓存中放入值
@@ -66,7 +73,7 @@ public class CacheConfig {
      */
     private Long createExpensiveGraph() throws InterruptedException {
         Thread.sleep(3000);
-        System.out.println("refresh");
-        return 400L;
+        System.out.println("asyn");
+        return 200L;
     }
 }
