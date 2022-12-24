@@ -119,7 +119,12 @@
 	     .maximumSize(10_000)
 	     .recordStats()
 	     .build();
+
 	    cache.stats() 
+        cache是caffeine包下的，不是spring包下的
+        如何通过spring包下的cache获取到对应实现类的cache
+        使用`getNativeCache()`方法
+        com.github.benmanes.caffeine.cache.Cache nativeCache = (com.github.benmanes.caffeine.cache.Cache) firstCacheManager.getCache(MyFirstCacheManager.Caches.five_min_cache.name()).getNativeCache();
 
  hitRate()：返回命中与请求的比率
 

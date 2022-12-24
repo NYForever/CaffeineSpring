@@ -23,6 +23,7 @@ public class CacheConfig {
     public AsyncLoadingCache<String, Long> asynCaffeineCache() {
         return Caffeine.newBuilder()
                 .maximumSize(10_000)
+                .recordStats()
                 .expireAfterWrite(10, TimeUnit.MINUTES)
                 .buildAsync(key -> createExpensiveGraph());
     }
@@ -32,6 +33,7 @@ public class CacheConfig {
 
         return Caffeine.newBuilder()
                 .maximumSize(10_000)
+                .recordStats()
                 .expireAfterWrite(10, TimeUnit.MINUTES)
                 .build(new CacheLoader<String, Long>() {
                     @Override
